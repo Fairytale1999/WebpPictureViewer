@@ -4,9 +4,9 @@
 ### 我的项目结构
 > Demo
 >> webp
->>> img1.webp
+>>> 1.webp
 >>> 
->>> img2.webp
+>>> 2.webp
 >>> 
 >> WebpPictureViewer.html
 ### 由于脚本语言限制无法主动获取或者扫描文件，故此使用前需要在WebpPictureViewer.html中配置相关文件夹信息

@@ -27,7 +27,7 @@ var arry = [
     3.webp
     ...
 
-### 最后配置完成后使用浏览器打开即可WebpPictureViewer.html文件
+### 最后配置完成后使用浏览器打开WebpPictureViewer.html文件即可
 #### 滚动预览
 ![](/img/demo1.gif)
 #### 侧边栏预览

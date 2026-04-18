@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebpPictureViewer</title>
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script>
+    
+        // 字典
+        var arry = [
+            {"name": "测试标题1", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+            {"name": "测试标题2", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+            {"name": "测试标题3", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+            {"name": "测试标题4", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+        ];
+        
+        // 配置
+        var pageSize = 10;  // 每次预加载5张
+        
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            background-color: #000000;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        #scrollContainer {
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            background-color: #000000;
+        }
+        
+        .content {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+        
+        .image-item {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: #000000;
+            line-height: 0;
+            font-size: 0;
+        }
+        
+        .image-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            background-color: #000000;
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+        
+        /* 图片计数 - 右下角 */
+        .page-indicator {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 6px 13px;
+            border-radius: 30px;
+            font-size: 10px;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.2);
+            pointer-events: none;
+        }
+        
+        /* 加载指示器 */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 40px;
+            font-size: 16px;
+            z-index: 2000;
+            display: none;
+            backdrop-filter: blur(5px);
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        /* 菜单按钮 - 添加平滑过渡 */
+        .menu-btn {
+            position: fixed;
+            top: 15px;
+            right: 0;
+            width: 30px;
+            height: 30px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 20px 0 0 20px;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+            z-index: 1500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            border-left: 1px solid rgba(255,255,255,0.2);
+            transition: right 0.3s ease;  /* 添加平滑过渡动画 */
+        }
+        
+        /* 抽屉菜单打开时按钮的位置 - 和抽屉一起滑动 */
+        .menu-btn.slide-out {
+            right: 300px;  /* 和抽屉宽度一致 */
+        }
+        
+        /* 抽屉菜单 - 带预览图 */
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            height: 100%;
+            background: rgba(20,20,20,0.98);
+            backdrop-filter: blur(10px);
+            transition: right 0.3s ease;  /* 保持相同的动画曲线 */
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px 10px;
+            border-left: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .drawer.open {
+            right: 0;
+        }
+        
+        .drawer-item {
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .drawer-item:active {
+            background: rgba(255,255,255,0.15);
+            transform: scale(0.98);
+        }
+        
+        .drawer-item.active {
+            background: #12a9ba;
+            border-color: transparent;
+        }
+        
+        /* 预览图容器 */
+        .preview-container {
+            width: 100%;
+            height: 66px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 5px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        /* 预览图加载失败时的占位 */
+        .preview-placeholder {
+            width: 100%;
+            height: 100%;
+            background: #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 12px;
+        }
+        
+        /* 分类标题 */
+        .drawer-item .title {
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            word-break: break-word;
+            line-height: 1.3;
+        }
+        
+        .drawer-item .count {
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            margin-top: 3px;
+        }
+        
+        /* 回到顶部按钮 */
+        .back-top {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            width: 35px;
+            height: 35px;
+            background: rgba(0,0,0,0.5);
+            border: none;
+            border-radius: 18px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: none;
+            z-index: 1500;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: opacity 0.2s;  /* 添加淡入淡出 */
+        }
+        
+        /* 错误标记 */
+        .error-badge {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 68, 68, 0.7);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+        }
+        
+        /* 调试信息 */
+        .debug-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            color: #0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 3000;
+            display: none;
+        }
+        
+        /* 自定义滚动条 */
+        .drawer::-webkit-scrollbar {
+            width: 3px;
+        }
+        
+        .drawer::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 1.5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="scrollContainer">
+        <!-- 图片计数 - 右下角 -->
+        <div class="page-indicator" id="pageIndicator">0/0</div>
+        
+        <!-- 菜单按钮 - 带滑动动画 -->
+        <button class="menu-btn" id="menuBtn">☰</button>
+        
+        <!-- 抽屉菜单 - 带预览图 -->
+        <div class="drawer" id="drawer"></div>
+        
+        <!-- 回到顶部 -->
+        <button class="back-top" id="backTop">↑</button>
+        
+        <!-- 加载提示 -->
+        <div class="loading" id="loading">加载中...</div>
+        
+        <!-- 调试信息 -->
+        <div class="debug-info" id="debugInfo"></div>
+        
+        <!-- 图片列表 -->
+        <div class="content" id="content"></div>
+    </div>
+
+    <script>
+        // 字典
+        var arry = [
+            {"name": "测试标题1", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+            {"name": "测试标题2", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+            {"name": "测试标题3", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+            {"name": "测试标题4", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+        ];
+        
+        // 配置
+        var pageSize = 10;  // 每次预加载5张
+        
+        // 状态变量
+        var currentCollection = 0;
+        var currentIndex = 1;
+        var isLoading = false;
+        var loadedImages = 0;
+        var totalImages = arry[0].fileSum;
+        
+        // 当前显示的图片索引
+        var currentViewIndex = 1;
+        
+        // 预览图缓存
+        var previewCache = {};
+        
+        // 初始化
+        initDrawer();
+        loadCollection(0);
+        
+        // 加载指定集合
+        function loadCollection(index) {
+            currentCollection = index;
+            currentIndex = 1;
+            loadedImages = 0;
+            totalImages = arry[index].fileSum;
+            
+            // 清空内容
+            document.getElementById('content').innerHTML = '';
+            updateIndicator();
+            
+            // 开始加载
+            loadMore();
+        }
+        
+        // 构建图片路径: path + index + fileSuffix
+        function getImagePath(collectionIndex, imageIndex) {
+            return arry[collectionIndex].path + imageIndex + arry[collectionIndex].fileSuffix;
+        }
+        
+        // 创建图片元素 - 无缝模式
+        function createImageItem(index) {
+            var item = document.createElement('div');
+            item.className = 'image-item';
+            item.dataset.index = index;
+            
+            // 图片
+            var img = document.createElement('img');
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.3s';
+            img.setAttribute('data-index', index);
+            
+            // 加载成功
+            img.onload = function() {
+                this.style.opacity = '1';
+                loadedImages++;
+                updateIndicator();
+                
+                // 移除可能存在的错误标记
+                var error = item.querySelector('.error-badge');
+                if (error) error.remove();
+            };
+            
+            // 加载失败
+            img.onerror = function() {
+                if (!item.querySelector('.error-badge')) {
+                    var error = document.createElement('span');
+                    error.className = 'error-badge';
+                    error.textContent = '❌ 加载失败';
+                    item.appendChild(error);
+                }
+                
+                // 自动重试一次
+                setTimeout(function() {
+                    if (!img.src) return;
+                    var src = img.src;
+                    img.src = '';
+                    setTimeout(function() {
+                        img.src = src;
+                    }, 500);
+                }, 2000);
+            };
+            
+            // 设置图片路径
+            img.src = getImagePath(currentCollection, index);
+            
+            item.appendChild(img);
+            return item;
+        }
+        
+        // 加载更多图片
+        function loadMore() {
+            if (isLoading) return;
+            
+            var total = arry[currentCollection].fileSum;
+            if (currentIndex > total) {
+                document.getElementById('loading').classList.remove('active');
+                return;
+            }
+            
+            isLoading = true;
+            document.getElementById('loading').classList.add('active');
+            
+            requestAnimationFrame(function() {
+                setTimeout(function() {
+                    var content = document.getElementById('content');
+                    var batchSize = Math.min(pageSize, total - currentIndex + 1);
+                    
+                    for (var i = 0; i < batchSize; i++) {
+                        var item = createImageItem(currentIndex);
+                        content.appendChild(item);
+                        currentIndex++;
+                    }
+                    
+                    isLoading = false;
+                    document.getElementById('loading').classList.remove('active');
+                    
+                    if (currentIndex <= total && isNearBottom()) {
+                        loadMore();
+                    }
+                }, 50);
+            });
+        }
+        
+        // 检查是否靠近底部
+        function isNearBottom() {
+            var container = document.getElementById('scrollContainer');
+            return container.scrollHeight - container.scrollTop - container.clientHeight < 600;
+        }
+        
+        // 更新右下角页码指示器
+        function updateIndicator() {
+            var indicator = document.getElementById('pageIndicator');
+            
+            var container = document.getElementById('scrollContainer');
+            var items = document.querySelectorAll('.image-item');
+            var viewportHeight = container.clientHeight;
+            
+            var currentPage = 1;
+            for (var i = 0; i < items.length; i++) {
+                var item = items[i];
+                var rect = item.getBoundingClientRect();
+                if (rect.top <= viewportHeight/2 && rect.bottom >= viewportHeight/2) {
+                    currentPage = parseInt(item.dataset.index) || 1;
+                    break;
+                }
+            }
+            
+            currentViewIndex = currentPage;
+            indicator.textContent = currentPage + '/' + totalImages;
+        }
+        
+        // 加载预览图
+        function loadPreviewImage(container, collectionIndex) {
+            var img = document.createElement('img');
+            var previewPath = getImagePath(collectionIndex, 1); // 加载第一张作为预览
+            
+            img.onload = function() {
+                container.innerHTML = '';
+                container.appendChild(img);
+                previewCache[collectionIndex] = previewPath;
+            };
+            
+            img.onerror = function() {
+                // 预览图加载失败，显示占位
+                var placeholder = document.createElement('div');
+                placeholder.className = 'preview-placeholder';
+                placeholder.textContent = '无预览';
+                container.innerHTML = '';
+                container.appendChild(placeholder);
+            };
+            
+            img.src = previewPath;
+        }
+        
+        // 初始化抽屉菜单
+        function initDrawer() {
+            var drawer = document.getElementById('drawer');
+            
+            for (var i = 0; i < arry.length; i++) {
+                (function(index) {
+                    var item = document.createElement('div');
+                    item.className = 'drawer-item';
+                    if (index === 0) item.classList.add('active');
+                    
+                    // 预览图容器
+                    var previewContainer = document.createElement('div');
+                    previewContainer.className = 'preview-container';
+                    
+                    // 先显示加载占位
+                    var placeholder = document.createElement('div');
+                    placeholder.className = 'preview-placeholder';
+                    placeholder.textContent = '加载中...';
+                    previewContainer.appendChild(placeholder);
+                    
+                    // 标题
+                    var title = document.createElement('div');
+                    title.className = 'title';
+                    title.textContent = arry[index].name;
+                    
+                    // 数量
+                    var count = document.createElement('div');
+                    count.className = 'count';
+                    count.textContent = '共 ' + arry[index].fileSum + ' 张';
+                    
+                    item.appendChild(previewContainer);
+                    item.appendChild(title);
+                    item.appendChild(count);
+                    
+                    // 点击事件
+                    item.onclick = function(e) {
+                        e.preventDefault();
+                        
+                        document.querySelectorAll('.drawer-item').forEach(function(el) {
+                            el.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                        
+                        loadCollection(index);
+                        
+                        // 关闭抽屉时同时收回按钮
+                        drawer.classList.remove('open');
+                        document.getElementById('menuBtn').classList.remove('slide-out');
+                    };
+                    
+                    drawer.appendChild(item);
+                    
+                    // 加载预览图
+                    loadPreviewImage(previewContainer, index);
+                })(i);
+            }
+        }
+        
+        // 滚动监听
+        var container = document.getElementById('scrollContainer');
+        
+        container.addEventListener('scroll', function() {
+            updateIndicator();
+            
+            if (isNearBottom()) {
+                loadMore();
+            }
+            
+            var backTop = document.getElementById('backTop');
+            backTop.style.display = container.scrollTop > 500 ? 'block' : 'none';
+        });
+        
+        // 回到顶部
+        document.getElementById('backTop').onclick = function() {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(updateIndicator, 300);
+        };
+        
+        // 菜单按钮 - 添加滑动动画
+        var menuBtn = document.getElementById('menuBtn');
+        var drawer = document.getElementById('drawer');
+        
+        menuBtn.onclick = function() {
+            if (drawer.classList.contains('open')) {
+                // 关闭抽屉
+                drawer.classList.remove('open');
+                menuBtn.classList.remove('slide-out');
+            } else {
+                // 打开抽屉
+                drawer.classList.add('open');
+                menuBtn.classList.add('slide-out');
+            }
+        };
+        
+        // 点击外部关闭菜单（同时收回按钮）
+        document.addEventListener('click', function(e) {
+            if (!drawer.contains(e.target) && !menuBtn.contains(e.target)) {
+                drawer.classList.remove('open');
+                menuBtn.classList.remove('slide-out');
+            }
+        });
+        
+        // 定期检查
+        setInterval(function() {
+            if (isNearBottom() && !isLoading) {
+                loadMore();
+            }
+            updateIndicator();
+        }, 300);
+        
+        // 窗口大小变化
+        window.addEventListener('resize', function() {
+            setTimeout(updateIndicator, 100);
+        });
+        
+        console.log('带预览图的漫画模式启动 - 按钮和侧边栏一起滑动');
+    </script>
+</body>
+</html>

@@ -6,34 +6,32 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script>
-    
-        // 字典
         var arry = [
-            {"name": "测试标题1", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
-            {"name": "测试标题2", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
-            {"name": "测试标题3", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
-            {"name": "测试标题4", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
+            // 格式固定，中文位置需要改，fileSuffix默认.webp如果是gif或者png等别的图片就改成对应的
+            {"name": "文件名", "path": "文件夹位置/", "fileSum": 图片数量, "fileSuffix": ".webp"},
         ];
-        
-        // 配置
-        var pageSize = 10;  // 每次预加载5张
-        
     </script>
     <style>
+        @font-face {
+            font-family: "MyRegularFont"; 
+            <!--这里是字体文件配置，无需求可以不用管，自己有ttf字体文件的话可以改成你的文件位置-->
+            src: url(".GurationFiles/mplus-1m-regular.ttf") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+        }
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            font-family:"MyRegularFont",sans-serif;
         }
-        
         html, body {
             background-color: #000000;
             height: 100%;
             width: 100%;
             overflow: hidden;
         }
-        
         #scrollContainer {
             height: 100%;
             overflow-y: auto;
@@ -41,13 +39,11 @@
             -webkit-overflow-scrolling: touch;
             background-color: #000000;
         }
-        
         .content {
             display: flex;
             flex-direction: column;
             padding: 0;
         }
-        
         .image-item {
             width: 100%;
             display: flex;
@@ -56,7 +52,6 @@
             line-height: 0;
             font-size: 0;
         }
-        
         .image-item img {
             width: 100%;
             height: auto;
@@ -66,8 +61,6 @@
             padding: 0;
             border: none;
         }
-        
-        /* 图片计数 - 右下角 */
         .page-indicator {
             position: fixed;
             bottom: 30px;
@@ -80,10 +73,12 @@
             z-index: 1000;
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255,255,255,0.2);
-            pointer-events: none;
+            pointer-events: auto;
+            cursor: pointer;
         }
-        
-        /* 加载指示器 */
+        .page-indicator:active {
+            background: rgba(255,255,255,0.15);
+        }
         .loading {
             position: fixed;
             top: 50%;
@@ -98,12 +93,9 @@
             display: none;
             backdrop-filter: blur(5px);
         }
-        
         .loading.active {
             display: block;
         }
-        
-        /* 菜单按钮 - 添加平滑过渡 */
         .menu-btn {
             position: fixed;
             top: 15px;
@@ -122,15 +114,11 @@
             justify-content: center;
             backdrop-filter: blur(5px);
             border-left: 1px solid rgba(255,255,255,0.2);
-            transition: right 0.3s ease;  /* 添加平滑过渡动画 */
+            transition: right 0.3s ease;
         }
-        
-        /* 抽屉菜单打开时按钮的位置 - 和抽屉一起滑动 */
         .menu-btn.slide-out {
-            right: 300px;  /* 和抽屉宽度一致 */
+            right: 300px;
         }
-        
-        /* 抽屉菜单 - 带预览图 */
         .drawer {
             position: fixed;
             top: 0;
@@ -139,17 +127,15 @@
             height: 100%;
             background: rgba(20,20,20,0.98);
             backdrop-filter: blur(10px);
-            transition: right 0.3s ease;  /* 保持相同的动画曲线 */
+            transition: right 0.3s ease;
             z-index: 2000;
             overflow-y: auto;
             padding: 20px 10px;
             border-left: 1px solid rgba(255,255,255,0.1);
         }
-        
         .drawer.open {
             right: 0;
         }
-        
         .drawer-item {
             display: flex;
             flex-direction: column;
@@ -163,18 +149,14 @@
             transition: all 0.2s;
             cursor: pointer;
         }
-        
         .drawer-item:active {
             background: rgba(255,255,255,0.15);
             transform: scale(0.98);
         }
-        
         .drawer-item.active {
             background: #12a9ba;
             border-color: transparent;
         }
-        
-        /* 预览图容器 */
         .preview-container {
             width: 100%;
             height: 66px;
@@ -186,15 +168,12 @@
             align-items: center;
             justify-content: center;
         }
-        
         .preview-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
         }
-        
-        /* 预览图加载失败时的占位 */
         .preview-placeholder {
             width: 100%;
             height: 100%;
@@ -205,8 +184,6 @@
             color: #888;
             font-size: 12px;
         }
-        
-        /* 分类标题 */
         .drawer-item .title {
             font-size: 14px;
             font-weight: 500;
@@ -214,15 +191,12 @@
             word-break: break-word;
             line-height: 1.3;
         }
-        
         .drawer-item .count {
             font-size: 10px;
             color: rgba(255,255,255,0.7);
             text-align: center;
             margin-top: 3px;
         }
-        
-        /* 回到顶部按钮 */
         .back-top {
             position: fixed;
             bottom: 70px;
@@ -239,10 +213,8 @@
             z-index: 1500;
             backdrop-filter: blur(5px);
             border: 1px solid rgba(255,255,255,0.2);
-            transition: opacity 0.2s;  /* 添加淡入淡出 */
+            transition: opacity 0.2s;
         }
-        
-        /* 错误标记 */
         .error-badge {
             position: absolute;
             bottom: 20px;
@@ -256,8 +228,6 @@
             backdrop-filter: blur(5px);
             pointer-events: none;
         }
-        
-        /* 调试信息 */
         .debug-info {
             position: fixed;
             top: 20px;
@@ -270,342 +240,479 @@
             z-index: 3000;
             display: none;
         }
-        
-        /* 自定义滚动条 */
         .drawer::-webkit-scrollbar {
             width: 3px;
         }
-        
         .drawer::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,0.3);
             border-radius: 1.5px;
+        }
+        .page-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(2px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .page-mask.show {
+            display: flex;
+        }
+        .page-modal {
+            background: rgba(20,20,20,0.95);
+            border:1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding:20px;
+            min-width:260px;
+        }
+        .page-modal-title {
+            color:#fff;
+            font-size:15px;
+            margin-bottom:14px;
+            text-align:center;
+        }
+        .page-input-wrap {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:6px;
+            margin-bottom:18px;
+        }
+        .page-jump-input {
+            width: 80px;
+            text-align:center;
+            background:rgba(255,255,255,0.1);
+            border:1px solid rgba(255,255,255,0.25);
+            border-radius:12px;
+            color:#fff;
+            padding:6px 0;
+            font-size:14px;
+            outline:none;
+        }
+        .page-total-text {
+            color:#ccc;
+            font-size:14px;
+        }
+        .page-btn-group {
+            display:flex;
+            gap:10px;
+            justify-content:center;
+        }
+        .page-btn-group button {
+            padding:7px 18px;
+            border-radius:10px;
+            border:none;
+            font-size:14px;
+            cursor:pointer;
+        }
+        .btn-cancel {
+            background:rgba(255,255,255,0.1);
+            color:#fff;
+            border:1px solid rgba(255,255,255,0.2);
+        }
+        .btn-go {
+            background:#12a9ba;
+            color:#fff;
+        }
+        .page-jump-input::-webkit-outer-spin-button,
+        .page-jump-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
         }
     </style>
 </head>
 <body>
     <div id="scrollContainer">
-        <!-- 图片计数 - 右下角 -->
         <div class="page-indicator" id="pageIndicator">0/0</div>
-        
-        <!-- 菜单按钮 - 带滑动动画 -->
+        <div class="page-mask" id="pageMask">
+            <div class="page-modal">
+                <div class="page-modal-title">跳转到指定页码</div>
+                <div class="page-input-wrap">
+                    <input class="page-jump-input" id="jumpInput" type="number" min="1" value="1">
+                    <span class="page-total-text">/ <span id="modalTotal">0</span></span>
+                </div>
+                <div class="page-btn-group">
+                    <button class="btn-cancel" id="cancelJump">取消</button>
+                    <button class="btn-go" id="confirmJump">跳转</button>
+                </div>
+            </div>
+        </div>
         <button class="menu-btn" id="menuBtn">☰</button>
-        
-        <!-- 抽屉菜单 - 带预览图 -->
         <div class="drawer" id="drawer"></div>
-        
-        <!-- 回到顶部 -->
         <button class="back-top" id="backTop">↑</button>
-        
-        <!-- 加载提示 -->
         <div class="loading" id="loading">加载中...</div>
-        
-        <!-- 调试信息 -->
         <div class="debug-info" id="debugInfo"></div>
-        
-        <!-- 图片列表 -->
         <div class="content" id="content"></div>
     </div>
 
     <script>
-        // 字典
-        var arry = [
-            {"name": "测试标题1", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
-            {"name": "测试标题2", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
-            {"name": "测试标题3", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
-            {"name": "测试标题4", "path": "webp/", "fileSum": 21, "fileSuffix": ".webp"},
-        ];
+        /**
+        * @author 爱睡觉de大懒虫
+        * @date 2026-07-02
+        * 
+        * 点击页码可跳转位置
+        * 浏览记录→LocalStorage
+        * 
+        */
+        const pageSize = 10;
+        let currentCollection = -1;
+        let currentIndex = 1;
+        let isLoading = false;
+        let loadedImages = 0;
+        let totalImages = 0;
+        let currentViewIndex = 1;
+        const previewCache = {};
+        let saveScrollTimer = null;
+        const container = document.getElementById('scrollContainer');
+        let isJumping = false;
+        let isSaving = false;
+        let collWaitTimer = null;
+        let collTimeoutTimer = null;
+        let autoScrollLock = false;
+        let restoreTargetScroll = null;
         
-        // 配置
-        var pageSize = 10;  // 每次预加载5张
+        const resizeObs = new ResizeObserver(() => {
+            if (isJumping && restoreTargetScroll !== null) {
+                autoScrollLock = true;
+                container.scrollTop = restoreTargetScroll;
+                setTimeout(() => autoScrollLock = false, 50);
+            }
+        });
+        resizeObs.observe(container);
         
-        // 状态变量
-        var currentCollection = 0;
-        var currentIndex = 1;
-        var isLoading = false;
-        var loadedImages = 0;
-        var totalImages = arry[0].fileSum;
+        function getAllProgress() {
+            const raw = localStorage.getItem('webpToolProgress');
+            if (!raw) return {};
+            try {
+                return JSON.parse(raw);
+            } catch (err) {
+                localStorage.removeItem('webpToolProgress');
+                return {};
+            }
+        }
         
-        // 当前显示的图片索引
-        var currentViewIndex = 1;
+        function saveCurrentProgressNow() {
+            if (isJumping || isSaving) return;
+            isSaving = true;
+            const progress = getAllProgress();
+            const key = `coll_${currentCollection}`;
+            progress[key] = {
+                collIndex: currentCollection,
+                viewPage: currentViewIndex,
+                scrollTop: container.scrollTop
+            };
+            localStorage.setItem('webpToolProgress', JSON.stringify(progress));
+            setTimeout(() => isSaving = false, 100);
+        }
         
-        // 预览图缓存
-        var previewCache = {};
+        function debounceSaveProgress() {
+            if (isJumping) return;
+            clearTimeout(saveScrollTimer);
+            saveScrollTimer = setTimeout(saveCurrentProgressNow, 400);
+        }
         
-        // 初始化
+        function getCollProgress(collIdx) {
+            return getAllProgress()[`coll_${collIdx}`] || null;
+        }
+        
+        function refreshSidebarActive() {
+            const items = document.querySelectorAll('.drawer-item');
+            items.forEach((item, idx) => {
+                item.classList.toggle('active', idx === currentCollection);
+            });
+        }
+        
+        window.addEventListener('blur', () => {
+            if (!isJumping) saveCurrentProgressNow();
+        });
+        
         initDrawer();
-        loadCollection(0);
+        initPageModal();
+        const lastColl = Number(localStorage.getItem('webpToolLastColl')) || 0;
+        loadCollection(lastColl);
         
-        // 加载指定集合
         function loadCollection(index) {
+            clearInterval(collWaitTimer);
+            clearTimeout(collTimeoutTimer);
+            restoreTargetScroll = null;
+            saveCurrentProgressNow();
+        
             currentCollection = index;
+            localStorage.setItem('webpToolLastColl', index);
+            refreshSidebarActive();
+        
             currentIndex = 1;
             loadedImages = 0;
             totalImages = arry[index].fileSum;
-            
-            // 清空内容
             document.getElementById('content').innerHTML = '';
+            document.getElementById('modalTotal').textContent = totalImages;
+            document.getElementById('jumpInput').value = 1;
+            currentViewIndex = 1;
+            container.scrollTop = 0;
             updateIndicator();
-            
-            // 开始加载
             loadMore();
+        
+            const record = getCollProgress(index);
+            if (!record) return;
+        
+            collTimeoutTimer = setTimeout(() => {
+                clearInterval(collWaitTimer);
+                jumpDirect(record.viewPage, record.scrollTop);
+            }, 2000);
+        
+            collWaitTimer = setInterval(() => {
+                const loadedEnough = currentIndex > record.viewPage;
+                const targetDom = document.querySelector(`.image-item[data-index="${record.viewPage}"]`);
+                if (loadedEnough && targetDom) {
+                    clearInterval(collWaitTimer);
+                    clearTimeout(collTimeoutTimer);
+                    jumpDirect(record.viewPage, record.scrollTop);
+                }
+            }, 60);
         }
         
-        // 构建图片路径: path + index + fileSuffix
-        function getImagePath(collectionIndex, imageIndex) {
-            return arry[collectionIndex].path + imageIndex + arry[collectionIndex].fileSuffix;
+        function getImagePath(collIdx, imgIdx) {
+            return `${arry[collIdx].path}${imgIdx}${arry[collIdx].fileSuffix}`;
         }
         
-        // 创建图片元素 - 无缝模式
-        function createImageItem(index) {
-            var item = document.createElement('div');
+        function createImageItem(idx) {
+            const item = document.createElement('div');
             item.className = 'image-item';
-            item.dataset.index = index;
-            
-            // 图片
-            var img = document.createElement('img');
+            item.dataset.index = idx;
+            const img = document.createElement('img');
             img.style.opacity = '0';
             img.style.transition = 'opacity 0.3s';
-            img.setAttribute('data-index', index);
-            
-            // 加载成功
-            img.onload = function() {
-                this.style.opacity = '1';
+        
+            img.onload = () => {
+                img.style.opacity = '1';
                 loadedImages++;
-                updateIndicator();
-                
-                // 移除可能存在的错误标记
-                var error = item.querySelector('.error-badge');
-                if (error) error.remove();
+                if (!isJumping) updateIndicator();
+                item.querySelector('.error-badge')?.remove();
             };
-            
-            // 加载失败
-            img.onerror = function() {
+            img.onerror = () => {
                 if (!item.querySelector('.error-badge')) {
-                    var error = document.createElement('span');
-                    error.className = 'error-badge';
-                    error.textContent = '❌ 加载失败';
-                    item.appendChild(error);
+                    const err = document.createElement('span');
+                    err.className = 'error-badge';
+                    err.textContent = '❌ 加载失败';
+                    item.appendChild(err);
                 }
-                
-                // 自动重试一次
-                setTimeout(function() {
-                    if (!img.src) return;
-                    var src = img.src;
+                setTimeout(() => {
+                    const src = img.src;
                     img.src = '';
-                    setTimeout(function() {
-                        img.src = src;
-                    }, 500);
+                    setTimeout(() => img.src = src, 500);
                 }, 2000);
             };
-            
-            // 设置图片路径
-            img.src = getImagePath(currentCollection, index);
-            
+            img.src = getImagePath(currentCollection, idx);
             item.appendChild(img);
             return item;
         }
         
-        // 加载更多图片
         function loadMore() {
             if (isLoading) return;
-            
-            var total = arry[currentCollection].fileSum;
-            if (currentIndex > total) {
+            const max = arry[currentCollection].fileSum;
+            if (currentIndex > max) {
                 document.getElementById('loading').classList.remove('active');
                 return;
             }
-            
             isLoading = true;
             document.getElementById('loading').classList.add('active');
-            
-            requestAnimationFrame(function() {
-                setTimeout(function() {
-                    var content = document.getElementById('content');
-                    var batchSize = Math.min(pageSize, total - currentIndex + 1);
-                    
-                    for (var i = 0; i < batchSize; i++) {
-                        var item = createImageItem(currentIndex);
-                        content.appendChild(item);
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const wrap = document.getElementById('content');
+                    const batch = Math.min(pageSize, max - currentIndex + 1);
+                    for (let i = 0; i < batch; i++) {
+                        wrap.appendChild(createImageItem(currentIndex));
                         currentIndex++;
                     }
-                    
                     isLoading = false;
                     document.getElementById('loading').classList.remove('active');
-                    
-                    if (currentIndex <= total && isNearBottom()) {
-                        loadMore();
-                    }
+                    if (!isJumping && currentIndex <= max && isNearBottom()) loadMore();
                 }, 50);
             });
         }
         
-        // 检查是否靠近底部
+        function jumpDirect(targetPage, targetScroll = null) {
+            isJumping = true;
+            restoreTargetScroll = targetScroll;
+            const maxPage = arry[currentCollection].fileSum;
+            targetPage = Math.max(1, Math.min(targetPage, maxPage));
+            document.getElementById('jumpInput').value = targetPage;
+        
+            function loadStep() {
+                if (currentIndex <= targetPage && !isLoading) {
+                    loadMore();
+                    setTimeout(loadStep, 80);
+                } else {
+                    setTimeout(() => {
+                        const targetDom = document.querySelector(`.image-item[data-index="${targetPage}"]`);
+                        if (targetDom) container.scrollTop = targetDom.offsetTop;
+        
+                        if (targetScroll !== null) {
+                            let retryCount = 0;
+                            const maxRetry = 12;
+                            function lockScroll() {
+                                container.scrollTop = targetScroll;
+                                retryCount++;
+                                if (retryCount >= maxRetry) {
+                                    // 直接释放锁，无无效clearInterval
+                                    updateIndicator();
+                                    isJumping = false;
+                                    restoreTargetScroll = null;
+                                    return;
+                                }
+                                setTimeout(lockScroll, 100);
+                            }
+                            lockScroll();
+                        } else {
+                            updateIndicator();
+                            isJumping = false;
+                            restoreTargetScroll = null;
+                        }
+                    }, 120);
+                }
+            }
+            loadStep();
+        }
+        
+        function goToPage(targetNum) {
+            const total = arry[currentCollection].fileSum;
+            targetNum = Math.max(1, Math.min(targetNum, total));
+            closePageModal();
+            jumpDirect(targetNum);
+        }
+        
+        function initPageModal() {
+            const mask = document.getElementById('pageMask');
+            const indicator = document.getElementById('pageIndicator');
+            const jumpInput = document.getElementById('jumpInput');
+            const confirmBtn = document.getElementById('confirmJump');
+            const cancelBtn = document.getElementById('cancelJump');
+        
+            indicator.onclick = () => {
+                mask.classList.add('show');
+                jumpInput.value = currentViewIndex;
+                jumpInput.focus();
+            };
+            cancelBtn.onclick = closePageModal;
+            mask.onclick = e => e.target === mask && closePageModal();
+            confirmBtn.onclick = () => {
+                const n = Number(jumpInput.value);
+                if (!isNaN(n)) goToPage(n);
+            };
+            jumpInput.onkeydown = e => {
+                if (e.key === 'Enter') goToPage(Number(jumpInput.value));
+            };
+        }
+        function closePageModal() {
+            document.getElementById('pageMask').classList.remove('show');
+        }
+        
         function isNearBottom() {
-            var container = document.getElementById('scrollContainer');
             return container.scrollHeight - container.scrollTop - container.clientHeight < 600;
         }
         
-        // 更新右下角页码指示器
         function updateIndicator() {
-            var indicator = document.getElementById('pageIndicator');
-            
-            var container = document.getElementById('scrollContainer');
-            var items = document.querySelectorAll('.image-item');
-            var viewportHeight = container.clientHeight;
-            
-            var currentPage = 1;
-            for (var i = 0; i < items.length; i++) {
-                var item = items[i];
-                var rect = item.getBoundingClientRect();
-                if (rect.top <= viewportHeight/2 && rect.bottom >= viewportHeight/2) {
-                    currentPage = parseInt(item.dataset.index) || 1;
-                    break;
+            const indicator = document.getElementById('pageIndicator');
+            const items = document.querySelectorAll('.image-item');
+            if (items.length === 0) return;
+            const viewMid = container.scrollTop + container.clientHeight / 2;
+            let bestIdx = 1;
+            let minDis = Infinity;
+            items.forEach(el => {
+                const idx = Number(el.dataset.index);
+                const mid = el.offsetTop + el.offsetHeight / 2;
+                const dis = Math.abs(mid - viewMid);
+                if (dis < minDis) {
+                    minDis = dis;
+                    bestIdx = idx;
                 }
-            }
-            
-            currentViewIndex = currentPage;
-            indicator.textContent = currentPage + '/' + totalImages;
+            });
+            currentViewIndex = Math.max(1, Math.min(bestIdx, totalImages));
+            indicator.textContent = `${currentViewIndex}/${totalImages}`;
+            debounceSaveProgress();
         }
         
-        // 加载预览图
-        function loadPreviewImage(container, collectionIndex) {
-            var img = document.createElement('img');
-            var previewPath = getImagePath(collectionIndex, 1); // 加载第一张作为预览
-            
-            img.onload = function() {
-                container.innerHTML = '';
-                container.appendChild(img);
-                previewCache[collectionIndex] = previewPath;
+        function loadPreviewImage(box, collIdx) {
+            const img = document.createElement('img');
+            const src = getImagePath(collIdx, 1);
+            img.onload = () => {
+                box.innerHTML = '';
+                box.appendChild(img);
+                previewCache[collIdx] = src;
             };
-            
-            img.onerror = function() {
-                // 预览图加载失败，显示占位
-                var placeholder = document.createElement('div');
+            img.onerror = () => {
+                const placeholder = document.createElement('div');
                 placeholder.className = 'preview-placeholder';
                 placeholder.textContent = '无预览';
-                container.innerHTML = '';
-                container.appendChild(placeholder);
+                box.innerHTML = '';
+                box.appendChild(placeholder);
             };
-            
-            img.src = previewPath;
+            img.src = src;
         }
         
-        // 初始化抽屉菜单
         function initDrawer() {
-            var drawer = document.getElementById('drawer');
-            
-            for (var i = 0; i < arry.length; i++) {
-                (function(index) {
-                    var item = document.createElement('div');
-                    item.className = 'drawer-item';
-                    if (index === 0) item.classList.add('active');
-                    
-                    // 预览图容器
-                    var previewContainer = document.createElement('div');
-                    previewContainer.className = 'preview-container';
-                    
-                    // 先显示加载占位
-                    var placeholder = document.createElement('div');
-                    placeholder.className = 'preview-placeholder';
-                    placeholder.textContent = '加载中...';
-                    previewContainer.appendChild(placeholder);
-                    
-                    // 标题
-                    var title = document.createElement('div');
-                    title.className = 'title';
-                    title.textContent = arry[index].name;
-                    
-                    // 数量
-                    var count = document.createElement('div');
-                    count.className = 'count';
-                    count.textContent = '共 ' + arry[index].fileSum + ' 张';
-                    
-                    item.appendChild(previewContainer);
-                    item.appendChild(title);
-                    item.appendChild(count);
-                    
-                    // 点击事件
-                    item.onclick = function(e) {
-                        e.preventDefault();
-                        
-                        document.querySelectorAll('.drawer-item').forEach(function(el) {
-                            el.classList.remove('active');
-                        });
-                        this.classList.add('active');
-                        
-                        loadCollection(index);
-                        
-                        // 关闭抽屉时同时收回按钮
-                        drawer.classList.remove('open');
-                        document.getElementById('menuBtn').classList.remove('slide-out');
-                    };
-                    
-                    drawer.appendChild(item);
-                    
-                    // 加载预览图
-                    loadPreviewImage(previewContainer, index);
-                })(i);
-            }
+            const drawer = document.getElementById('drawer');
+            arry.forEach((itemData, idx) => {
+                const item = document.createElement('div');
+                item.className = `drawer-item${idx === currentCollection ? ' active' : ''}`;
+                const preBox = document.createElement('div');
+                preBox.className = 'preview-container';
+                preBox.innerHTML = '<div class="preview-placeholder">加载中...</div>';
+                const title = document.createElement('div');
+                title.className = 'title';
+                title.textContent = itemData.name;
+                const count = document.createElement('div');
+                count.className = 'count';
+                count.textContent = `共 ${itemData.fileSum} 张`;
+                item.append(preBox, title, count);
+                item.onclick = e => {
+                    e.preventDefault();
+                    document.querySelectorAll('.drawer-item').forEach(d => d.classList.remove('active'));
+                    item.classList.add('active');
+                    loadCollection(idx);
+                    drawer.classList.remove('open');
+                    document.getElementById('menuBtn').classList.remove('slide-out');
+                };
+                drawer.appendChild(item);
+                loadPreviewImage(preBox, idx);
+            });
         }
         
-        // 滚动监听
-        var container = document.getElementById('scrollContainer');
-        
-        container.addEventListener('scroll', function() {
+        container.addEventListener('scroll', () => {
+            if (autoScrollLock) return;
             updateIndicator();
-            
-            if (isNearBottom()) {
-                loadMore();
-            }
-            
-            var backTop = document.getElementById('backTop');
-            backTop.style.display = container.scrollTop > 500 ? 'block' : 'none';
+            if (!isJumping && isNearBottom()) loadMore();
+            document.getElementById('backTop').style.display = container.scrollTop > 500 ? 'block' : 'none';
         });
         
-        // 回到顶部
-        document.getElementById('backTop').onclick = function() {
+        document.getElementById('backTop').onclick = () => {
             container.scrollTo({ top: 0, behavior: 'smooth' });
-            setTimeout(updateIndicator, 300);
+            setTimeout(() => {
+                updateIndicator();
+                saveCurrentProgressNow();
+            }, 350);
         };
         
-        // 菜单按钮 - 添加滑动动画
-        var menuBtn = document.getElementById('menuBtn');
-        var drawer = document.getElementById('drawer');
-        
-        menuBtn.onclick = function() {
-            if (drawer.classList.contains('open')) {
-                // 关闭抽屉
-                drawer.classList.remove('open');
-                menuBtn.classList.remove('slide-out');
-            } else {
-                // 打开抽屉
-                drawer.classList.add('open');
-                menuBtn.classList.add('slide-out');
-            }
+        const menuBtn = document.getElementById('menuBtn');
+        const drawer = document.getElementById('drawer');
+        menuBtn.onclick = () => {
+            drawer.classList.toggle('open');
+            menuBtn.classList.toggle('slide-out');
         };
-        
-        // 点击外部关闭菜单（同时收回按钮）
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', e => {
             if (!drawer.contains(e.target) && !menuBtn.contains(e.target)) {
                 drawer.classList.remove('open');
                 menuBtn.classList.remove('slide-out');
             }
         });
         
-        // 定期检查
-        setInterval(function() {
-            if (isNearBottom() && !isLoading) {
-                loadMore();
-            }
-            updateIndicator();
+        setInterval(() => {
+            if (!isJumping && isNearBottom() && !isLoading) loadMore();
+            if (!isJumping) updateIndicator();
         }, 300);
         
-        // 窗口大小变化
-        window.addEventListener('resize', function() {
-            setTimeout(updateIndicator, 100);
-        });
-        
-        console.log('带预览图的漫画模式启动 - 按钮和侧边栏一起滑动');
+        window.addEventListener('resize', () => setTimeout(updateIndicator, 100));
     </script>
 </body>
 </html>

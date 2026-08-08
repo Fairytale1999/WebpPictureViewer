@@ -6,10 +6,12 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script>
-        var arry = [
+       var arry = [
             // 格式固定，中文位置需要改，fileSuffix默认.webp如果是gif或者png等别的图片就改成对应的
             {"name": "文件名", "path": "文件夹位置/", "fileSum": 图片数量, "fileSuffix": ".webp"},
         ];
+       // mp3文件
+       var audioSrc="";
     </script>
     <style>
         @font-face {
@@ -221,9 +223,9 @@
             left: 20px;
             background: rgba(255, 68, 68, 0.7);
             color: white;
-            padding: 6px 12px;
+            padding: 8px 12px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 8px;
             z-index: 10;
             backdrop-filter: blur(5px);
             pointer-events: none;
@@ -320,6 +322,26 @@
         .page-jump-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
         }
+        
+        .audio-hidden{
+            opacity: 0.5;
+        }
+        /* 底部浮动进度条 */
+        .audio-progress-wrap{
+            position:fixed;
+            bottom:20px;
+            left: 5%;
+            width:50%;
+            height:6px;
+            background-color: #555;
+            border-radius: 5px;
+        }
+        .audio-progress{
+            height: 100%;
+            width: 0%;
+            background-color: red;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -343,6 +365,15 @@
         <button class="back-top" id="backTop">↑</button>
         <div class="loading" id="loading">加载中...</div>
         <div class="debug-info" id="debugInfo"></div>
+        <div class="audio-hidden">
+            <div>
+                <audio id="audio" src="" style="display: none;" controls loop>
+            </div>
+            <!-- 进度条 -->
+            <div class="audio-progress-wrap" id="progressWrap">
+                <div class="audio-progress" id="progressBar"></div>
+            </div>
+        </div>
         <div class="content" id="content"></div>
     </div>
 
@@ -351,8 +382,11 @@
         * @author 爱睡觉de大懒虫
         * @date 2026-07-02
         * 
+        * 增加背景音乐以及播放条(点击任意位置播放)
         * 点击页码可跳转位置
         * 浏览记录→LocalStorage
+        * 删除文件后页面打不开/已修复
+        * 
         * 
         */
         const pageSize = 10;
@@ -371,6 +405,8 @@
         let collTimeoutTimer = null;
         let autoScrollLock = false;
         let restoreTargetScroll = null;
+        let isAutoJump = false;  // 是否开启自动跳转(true开启，false关闭)
+        let audioinit = true;   //是否开启背景音乐播放(true开启，false关闭)
         
         const resizeObs = new ResizeObserver(() => {
             if (isJumping && restoreTargetScroll !== null) {
@@ -426,10 +462,12 @@
         window.addEventListener('blur', () => {
             if (!isJumping) saveCurrentProgressNow();
         });
-        
         initDrawer();
         initPageModal();
-        const lastColl = Number(localStorage.getItem('webpToolLastColl')) || 0;
+        let lastColl = Number(localStorage.getItem('webpToolLastColl')) || 0;
+        if (lastColl >= arry.length){
+            lastColl = 0;
+        }
         loadCollection(lastColl);
         
         function loadCollection(index) {
@@ -437,7 +475,6 @@
             clearTimeout(collTimeoutTimer);
             restoreTargetScroll = null;
             saveCurrentProgressNow();
-        
             currentCollection = index;
             localStorage.setItem('webpToolLastColl', index);
             refreshSidebarActive();
@@ -452,10 +489,9 @@
             container.scrollTop = 0;
             updateIndicator();
             loadMore();
-        
             const record = getCollProgress(index);
-            if (!record) return;
-        
+            if (!record || !isAutoJump) return;
+            
             collTimeoutTimer = setTimeout(() => {
                 clearInterval(collWaitTimer);
                 jumpDirect(record.viewPage, record.scrollTop);
@@ -713,6 +749,41 @@
         }, 300);
         
         window.addEventListener('resize', () => setTimeout(updateIndicator, 100));
+        
+        // 背景音乐
+        const audio = document.querySelector('#audio');
+        const progressWrap = document.getElementById('progressWrap');
+        const progressBar = document.getElementById('progressBar');
+        
+        // 控件、播放器初始化
+        if( !(audioSrc!="" && audioSrc.length>0) || !audioinit ){
+            progressWrap.style.display = "none";
+        } else {
+            audio.src = audioSrc;
+        }
+        document.addEventListener('click', function playAudio() {
+            if(!audioinit) return;
+            audioinit = false;
+            audio.play();
+            document.removeEventListener('click', playAudio);
+        })
+        
+        // 更新进度条
+        audio.ontimeupdate = ()=>{
+            if(audio.duration){
+                let pct = (audio.currentTime / audio.duration) * 100;
+                console.log(pct)
+                progressBar.style.width = pct + '%';
+            }
+        };
+        
+        // 点击进度跳转
+        progressWrap.onclick = e=>{
+            if(!audio.duration) return;
+            let rect = progressWrap.getBoundingClientRect();
+            let rate = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = audio.duration * rate;
+        };
     </script>
 </body>
 </html>
